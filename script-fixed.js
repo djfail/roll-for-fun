@@ -2,7 +2,7 @@ const CONFIG = {
   OMDB_API_KEY: 'b8fff5fe',
   RAWG_API_KEY: '',
   DISCORD_WEBHOOK_URL: '',
-  USERS: ['Mum', 'Dad', 'Teen', 'Child 1', 'Child 2'],
+  USERS: ['Charlotte', 'Jackson', 'Joshua'],
   STORAGE_KEY: 'family-night-bookings-v1'
 };
 
@@ -153,24 +153,31 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   try {
+    console.log('🎬 Initializing app...');
     const [mJSON, gJSON, fJSON] = await Promise.all([
-      fetch('movies.json').then(r => r.json()).catch(() => null),
-      fetch('games.json').then(r => r.json()).catch(() => null),
-      fetch('food.json').then(r => r.json()).catch(() => null)
+      fetch('movies.json').then(r => r.json()).catch(e => { console.warn('❌ movies.json fetch failed:', e); return null; }),
+      fetch('games.json').then(r => r.json()).catch(e => { console.warn('❌ games.json fetch failed:', e); return null; }),
+      fetch('food.json').then(r => r.json()).catch(e => { console.warn('❌ food.json fetch failed:', e); return null; })
     ]);
 
+    console.log('📋 Loaded data:', { mJSON, gJSON, fJSON });
+
     foodItems = Array.isArray(fJSON) ? fJSON : FALLBACK_FOOD;
+    console.log('🍿 Food items:', foodItems);
 
     const movieList = Array.isArray(mJSON)
       ? mJSON
       : Object.keys(FALLBACK_MOVIES).map(imdbId => ({ imdbId }));
+    console.log('🎬 Movie list to fetch:', movieList);
 
     const gameList = Array.isArray(gJSON)
       ? gJSON
       : Object.keys(FALLBACK_GAMES).map(slug => ({ slug }));
 
     moviesData = await Promise.all(movieList.map(item => fetchMovieDetails(item.imdbId)));
+    console.log('🎬 Movies data fetched:', moviesData);
     moviesData = moviesData.filter(Boolean);
+    console.log('🎬 Movies after filter:', moviesData);
     renderMovies(moviesData);
 
     gamesData = await Promise.all(gameList.map(item => fetchGameDetails(item.slug)));
@@ -182,7 +189,7 @@ async function init() {
     renderBookings();
     wireUI();
   } catch (error) {
-    console.error('Init failed', error);
+    console.error('❌ Init failed', error);
     bookings = loadBookings();
     renderFoodList();
     renderBookings();
@@ -191,17 +198,26 @@ async function init() {
 }
 
 async function fetchMovieDetails(imdbId) {
-  if (!imdbId) return null;
+  if (!imdbId) {
+    console.warn('⚠️ No imdbId provided');
+    return null;
+  }
+  console.log(`📽️ Fetching movie details for: ${imdbId}`);
   if (CONFIG.OMDB_API_KEY) {
     try {
-      const res = await fetch(`https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${CONFIG.OMDB_API_KEY}`);
+      const url = `https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${CONFIG.OMDB_API_KEY}`;
+      console.log(`📡 Calling OMDb API: ${url}`);
+      const res = await fetch(url);
       const data = await res.json();
+      console.log(`✅ OMDb response for ${imdbId}:`, data);
       if (data && data.Response === 'True') return data;
     } catch (err) {
-      console.warn('OMDb fetch failed', err);
+      console.warn(`⚠️ OMDb fetch failed for ${imdbId}:`, err);
     }
   }
-  return FALLBACK_MOVIES[imdbId] || {
+  const fallbackMovie = FALLBACK_MOVIES[imdbId];
+  console.log(`🎨 Using fallback for ${imdbId}:`, fallbackMovie);
+  return fallbackMovie || {
     Title: imdbId,
     imdbID: imdbId,
     Poster: 'https://via.placeholder.com/300x450?text=Movie+Unavailable',
@@ -441,14 +457,17 @@ function onMovieGridClick(event) {
   const id = btn.dataset.id;
   const title = btn.dataset.title;
   let poster = '';
+  let rating = '';
   if (type === 'movie') {
     const movie = moviesData.find(x => (x.imdbID || x.imdbId || '') === id);
     poster = movie ? (movie.Poster || '') : '';
+    rating = movie ? (movie.Rated || '') : '';
   } else {
     const game = gamesData.find(x => x.slug === id);
     poster = game ? (game.background_image || '') : '';
+    rating = '';
   }
-  openBookingModal({ type, id, title, poster });
+  openBookingModal({ type, id, title, poster, rating });
 }
 
 function getMovieImageGallery(movie) {
@@ -508,24 +527,54 @@ function openBookingModal(item) {
       </select>
       <label class="muted small" style="margin-top:8px">Date</label>
       <input id="booking-date" type="date" value="${today}" min="${today}" required />
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button type="button" class="btn ghost" id="cancel-book">Cancel</button>
-        <button type="submit" class="btn">Continue</button>
-      </div>
-    </form>`;
+    </form>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button type="button" class="btn ghost" id="cancel-book">Cancel</button>
+      <button type="button" class="btn" id="submit-book">Continue</button>
+    </div>`;
   openModal();
 
   $('#cancel-book').addEventListener('click', closeModal);
-  $('#booking-form').addEventListener('submit', ev => {
-    ev.preventDefault();
+  $('#submit-book').addEventListener('click', () => {
     const requester = $('#requestedBy').value;
     const date = $('#booking-date').value;
     if (!date) { alert('Pick a date'); return; }
-    confirmBooking(item, requester, date);
+    confirmBooking(item, requester, date, item.rating || '');
   });
 }
+}
 
-function confirmBooking(item, requester, date) {
+function isRatedForAdults(ratingStr) {
+  if (!ratingStr) return false;
+  const adultRatings = ['PG-13', 'R', 'NC-17', '15', '16', '18'];
+  return adultRatings.some(r => ratingStr.includes(r));
+}
+
+function confirmBooking(item, requester, date, rating) {
+  const needsPermission = (requester === 'Jackson' || requester === 'Joshua') && isRatedForAdults(rating);
+  
+  if (needsPermission) {
+    modalBody.innerHTML = `
+      <div style="text-align:center">
+        <h3 style="color:var(--warning,#ff9800);margin-bottom:12px">⚠️ Permission Required</h3>
+        <p class="muted" style="font-size:16px;margin-bottom:16px">${escapeHtml(requester)}, this title is rated <strong>${escapeHtml(rating)}</strong>.</p>
+        <p class="muted" style="margin-bottom:20px">Please ask <strong>Harry or Mom</strong> for permission before booking.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button id="permission-granted" class="btn">I have permission!</button>
+          <button id="permission-cancel" class="btn ghost">Cancel</button>
+        </div>
+      </div>`;
+    
+    $('#permission-granted').addEventListener('click', () => {
+      proceedWithBooking(item, requester, date);
+    });
+    $('#permission-cancel').addEventListener('click', closeModal);
+  } else {
+    proceedWithBooking(item, requester, date);
+  }
+}
+
+function proceedWithBooking(item, requester, date) {
   modalBody.innerHTML = `
     <h3>Confirm Booking</h3>
     <p class="muted">Type: ${escapeHtml(item.type)}</p>
@@ -533,8 +582,8 @@ function confirmBooking(item, requester, date) {
     <p class="muted">Requested by: <strong>${escapeHtml(requester)}</strong></p>
     <p class="muted">Date: <strong>${escapeHtml(date)}</strong></p>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-      <button id="back-book" class="btn ghost">Back</button>
-      <button id="confirm-book" class="btn">Confirm</button>
+      <button type="button" class="btn ghost" id="back-book">Back</button>
+      <button type="button" class="btn" id="confirm-book">Confirm</button>
     </div>`;
 
   $('#back-book').addEventListener('click', () => openBookingModal(item));

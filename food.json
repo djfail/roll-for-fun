@@ -1,6 +1,6 @@
 [
-  { "name": "Pizza", "requiredRoll": 15 },
-  { "name": "Popcorn", "requiredRoll": 5 },
-  { "name": "Ice Cream", "requiredRoll": 10 },
-  { "name": "Takeaway", "requiredRoll": 20 }
+  { "name": "Pizza", "number": 1 },
+  { "name": "Popcorn", "number": 2 },
+  { "name": "Ice Cream", "number": 3 },
+  { "name": "Takeaway", "number": 4 }
 ]

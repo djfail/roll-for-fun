@@ -3,80 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Family Night Planner</title>
+  <title>Movie and Games Night!</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <h1>Family Night Planner</h1>
-      <p class="tag">Fun · Family · RPG-style rewards</p>
+      <h1>🎬🎮 Movie and Games Night!</h1>
+      <p class="tag">Pick your night · Pick your snack · Have fun!</p>
     </div>
     <div class="top-actions">
-      <button id="admin-toggle" class="btn">Enable Admin Mode</button>
+      <button id="new-booking" class="btn">+ New Booking</button>
     </div>
   </header>
 
   <main id="main">
-    <section id="movies-section" class="section active">
-      <div class="section-header">
-        <div class="search-wrap">
-          <input id="movies-search" class="search" placeholder="Search movies..." />
-        </div>
-        <div id="movies-filters" class="filters">
-          <button class="filter-btn" data-filter="Family">Family</button>
-          <button class="filter-btn" data-filter="Kids">Kids</button>
-          <button class="filter-btn" data-filter="Horror">Horror</button>
-          <button class="filter-btn" data-filter="Sci-Fi">Sci‑Fi</button>
-          <button class="filter-btn" data-filter="Action">Action</button>
-          <button class="filter-btn" data-filter="Drama">Drama</button>
-        </div>
-      </div>
-      <div id="movies-grid" class="grid"></div>
-    </section>
-
-    <section id="games-section" class="section">
-      <div class="section-header">
-        <div class="search-wrap">
-          <input id="games-search" class="search" placeholder="Search games..." />
-        </div>
-        <div id="games-filters" class="filters">
-          <button class="filter-btn" data-filter="Family">Family</button>
-          <button class="filter-btn" data-filter="Kids">Kids</button>
-          <button class="filter-btn" data-filter="Horror">Horror</button>
-          <button class="filter-btn" data-filter="Sci‑Fi">Sci‑Fi</button>
-          <button class="filter-btn" data-filter="Action">Action</button>
-          <button class="filter-btn" data-filter="Drama">Drama</button>
-        </div>
-      </div>
-      <div id="games-grid" class="grid"></div>
-    </section>
-
-    <section id="bookings-section" class="section">
+    <section id="bookings-section" class="section active">
       <div class="section-header bookings-header">
-        <h2>Upcoming Bookings</h2>
-        <div class="bookings-actions">
-          <button id="clear-past" class="btn small">Clear past</button>
-        </div>
+        <h2>📅 Your Bookings</h2>
       </div>
       <div id="bookings-list" class="list bookings-list"></div>
     </section>
-
-    <section id="food-section" class="section">
-      <div class="section-header">
-        <h2>Food (D20)</h2>
-        <p class="muted">Roll D20 to try for tasty snac.</p>
-      </div>
-      <div id="food-list" class="list food-list"></div>
-    </section>
   </main>
-
-  <nav id="bottom-nav" class="bottom-nav">
-    <button class="nav-btn active" data-target="movies-section">🎬 Movies</button>
-    <button class="nav-btn" data-target="games-section">🎮 Games</button>
-    <button class="nav-btn" data-target="bookings-section">🗓️ Bookings</button>
-    <button class="nav-btn" data-target="food-section">🍿 Food</button>
-  </nav>
 
   <div id="modal" class="modal hidden" aria-hidden="true">
     <div class="modal-content">
@@ -85,6 +33,6 @@
     </div>
   </div>
 
-  <script src="script-fixed.js"></script>
+  <script src="script-wizard.js"></script>
 </body>
 </html>
